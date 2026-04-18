@@ -15,7 +15,7 @@ async function register({ email, password, nome }) {
     data: { email, password: hash, nome },
     select: { id: true, email: true, nome: true, isAdmin: true, createdAt: true },
   })
-  const token = signToken(user.id)
+  const token = signToken(user.id, false)
   return { user, token }
 }
 
@@ -32,7 +32,7 @@ async function login({ email, password }) {
     err.status = 401
     throw err
   }
-  const token = signToken(user.id)
+  const token = signToken(user.id, user.isAdmin)
   const { password: _pw, ...safe } = user
   return { user: { ...safe, isAdmin: user.isAdmin }, token }
 }
@@ -113,8 +113,8 @@ async function resetPassword(token, newPassword) {
   await prisma.passwordResetToken.delete({ where: { token } })
 }
 
-function signToken(userId) {
-  return jwt.sign({ sub: userId }, process.env.JWT_SECRET, {
+function signToken(userId, isAdmin = false) {
+  return jwt.sign({ sub: userId, isAdmin }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   })
 }

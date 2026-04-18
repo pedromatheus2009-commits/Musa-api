@@ -51,7 +51,7 @@ async function findById(id) {
     where: { id },
     select: { ...profileSelect, reviews: { orderBy: { createdAt: 'desc' }, take: 20 }, posts: { select: { id: true, titulo: true, conteudo: true, imagemUrl: true, createdAt: true }, orderBy: { createdAt: 'desc' } } },
   })
-  if (!profile || !profile.ativo) {
+  if (!profile || !profile.ativo || !profile.aprovado) {
     const err = new Error('Perfil não encontrado')
     err.status = 404
     throw err
