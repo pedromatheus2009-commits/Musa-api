@@ -61,13 +61,39 @@ async function getSubscriptionStatus(userId) {
       subscriptionStatus: true,
       subscriptionPeriodEnd: true,
       subscriptionId: true,
+      stripeCustomerId: true,
     },
   })
+
+  const dbActive = user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'trialing'
+
+  // Se o banco não mostra ativo mas há um customer Stripe, sincroniza direto da API
+  if (!dbActive && user?.stripeCustomerId) {
+    try {
+      const subscriptions = await stripe.subscriptions.list({
+        customer: user.stripeCustomerId,
+        status: 'all',
+        limit: 1,
+      })
+      const sub = subscriptions.data[0]
+      if (sub) {
+        await _updateUserSubscription(user.stripeCustomerId, sub)
+        const isActive = sub.status === 'active' || sub.status === 'trialing'
+        return {
+          status: sub.status,
+          periodEnd: new Date(sub.current_period_end * 1000),
+          active: isActive,
+        }
+      }
+    } catch {
+      // Falha silenciosa — retorna o que tem no banco
+    }
+  }
 
   return {
     status: user?.subscriptionStatus || null,
     periodEnd: user?.subscriptionPeriodEnd || null,
-    active: user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'trialing',
+    active: dbActive,
   }
 }
 
