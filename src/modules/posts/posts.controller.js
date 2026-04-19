@@ -3,7 +3,8 @@ const prisma = require('../../config/database')
 
 async function list(req, res, next) {
   try {
-    const posts = await service.listByProfile(req.params.profileId)
+    const tipo = req.query.tipo || undefined
+    const posts = await service.listByProfile(req.params.profileId, tipo)
     res.json(posts)
   } catch (err) { next(err) }
 }

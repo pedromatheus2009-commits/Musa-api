@@ -6,6 +6,7 @@ const reviewSelect = {
   nota: true,
   comentario: true,
   createdAt: true,
+  medias: { select: { id: true, tipo: true, url: true } },
 }
 
 async function listByProfile(profileId) {
@@ -23,10 +24,21 @@ async function create(profileId, data) {
     err.status = 404
     throw err
   }
-  return prisma.review.create({
-    data: { profileId, ...data },
+
+  const { medias, ...reviewData } = data
+
+  const review = await prisma.review.create({
+    data: {
+      profileId,
+      ...reviewData,
+      ...(medias?.length && {
+        medias: { create: medias.map(({ tipo, url }) => ({ tipo, url })) },
+      }),
+    },
     select: reviewSelect,
   })
+
+  return review
 }
 
 module.exports = { listByProfile, create }

@@ -88,15 +88,27 @@ model ProfileCategory {
 }
 
 model Review {
-  id         String   @id @default(uuid())
-  profileId  String   @map("profile_id")
-  profile    Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  autorNome  String   @map("autor_nome")
+  id         String        @id @default(uuid())
+  profileId  String        @map("profile_id")
+  profile    Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  autorNome  String        @map("autor_nome")
   nota       Int
-  comentario String?  @db.Text
-  createdAt  DateTime @default(now()) @map("created_at")
+  comentario String?       @db.Text
+  createdAt  DateTime      @default(now()) @map("created_at")
+  medias     ReviewMedia[]
 
   @@map("reviews")
+}
+
+model ReviewMedia {
+  id        String   @id @default(uuid())
+  reviewId  String   @map("review_id")
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  tipo      String   @db.VarChar(10)
+  url       String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("review_medias")
 }
 
 model FeedPost {
@@ -118,10 +130,12 @@ model Post {
   id        String   @id @default(uuid())
   profileId String   @map("profile_id")
   profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  tipo      String   @default("portfolio") @db.VarChar(20)
   titulo    String?  @db.VarChar(200)
   conteudo  String?  @db.Text
   imagemUrl String?  @map("imagem_url")
   videoUrl  String?  @map("video_url")
+  destaque  Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

@@ -1,35 +1,60 @@
 const prisma = require('../../config/database')
 
+const PORTFOLIO_LIMIT = 10
+
 const postSelect = {
   id: true,
+  tipo: true,
   titulo: true,
   conteudo: true,
   imagemUrl: true,
   videoUrl: true,
+  destaque: true,
   createdAt: true,
   updatedAt: true,
 }
 
-async function listByProfile(profileId) {
+async function listByProfile(profileId, tipo) {
   return prisma.post.findMany({
-    where: { profileId },
+    where: { profileId, ...(tipo && { tipo }) },
     select: postSelect,
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ destaque: 'desc' }, { createdAt: 'desc' }],
   })
 }
 
 async function create(profileId, data) {
+  const { destaque = false, tipo = 'portfolio', ...rest } = data
+
+  if (tipo === 'portfolio') {
+    const count = await prisma.post.count({ where: { profileId, tipo: 'portfolio' } })
+    if (count >= PORTFOLIO_LIMIT) {
+      const err = new Error(`Limite de ${PORTFOLIO_LIMIT} posts no portfólio atingido`)
+      err.status = 422
+      throw err
+    }
+  }
+
+  if (destaque) {
+    await prisma.post.updateMany({ where: { profileId, destaque: true }, data: { destaque: false } })
+  }
+
   return prisma.post.create({
-    data: { profileId, ...data },
+    data: { profileId, tipo, destaque, ...rest },
     select: postSelect,
   })
 }
 
 async function update(id, profileId, data) {
   await assertOwner(id, profileId)
+  const { destaque, ...rest } = data
+
+  if (destaque === true) {
+    await prisma.post.updateMany({ where: { profileId, destaque: true }, data: { destaque: false } })
+  }
+
   return prisma.post.update({
     where: { id },
-    data,
+    data: { ...rest, ...(destaque !== undefined && { destaque }) },
     select: postSelect,
   })
 }

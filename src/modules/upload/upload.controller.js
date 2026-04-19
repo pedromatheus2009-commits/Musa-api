@@ -76,4 +76,30 @@ async function uploadPostVideo(req, res) {
   res.json({ url: publicUrl })
 }
 
-module.exports = { uploadAvatar, uploadPostImage, uploadPostVideo }
+async function uploadReviewMedia(req, res) {
+  if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' })
+
+  const isVideo = req.file.mimetype.startsWith('video/')
+  const folder = isVideo ? 'review-videos' : 'review-photos'
+  const ext = req.file.mimetype.split('/')[1].replace('jpeg', 'jpg').replace('quicktime', 'mov')
+  const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+
+  if (!process.env.SUPABASE_URL) {
+    return res.json({ url: isVideo ? 'https://www.w3schools.com/html/mov_bbb.mp4' : `https://picsum.photos/seed/${Date.now()}/800/600` })
+  }
+
+  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
+  const { error } = await supabase.storage
+    .from(process.env.SUPABASE_STORAGE_BUCKET)
+    .upload(filename, req.file.buffer, { contentType: req.file.mimetype })
+
+  if (error) return res.status(500).json({ error: 'Falha no upload' })
+
+  const { data: { publicUrl } } = supabase.storage
+    .from(process.env.SUPABASE_STORAGE_BUCKET)
+    .getPublicUrl(filename)
+
+  res.json({ url: publicUrl, tipo: isVideo ? 'video' : 'foto' })
+}
+
+module.exports = { uploadAvatar, uploadPostImage, uploadPostVideo, uploadReviewMedia }

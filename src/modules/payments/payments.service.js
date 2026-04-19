@@ -117,14 +117,6 @@ async function _updateUserSubscription(customerId, subscription) {
       subscriptionPeriodEnd: periodEnd,
     },
   })
-
-  await prisma.profile.updateMany({
-    where: { userId: user.id },
-    data: {
-      ativo: isActive,
-      ...(isActive && { aprovado: true }),
-    },
-  })
 }
 
 module.exports = { createCheckoutSession, createPortalSession, getSubscriptionStatus, handleWebhook }

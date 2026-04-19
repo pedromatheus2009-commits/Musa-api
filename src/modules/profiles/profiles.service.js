@@ -14,6 +14,7 @@ const profileSelect = {
   services: { select: { id: true, nome: true } },
   categories: { select: { category: { select: { id: true, nome: true } } } },
   _count: { select: { reviews: true } },
+  posts: { where: { destaque: true, tipo: 'portfolio' }, select: { imagemUrl: true }, take: 1 },
 }
 
 async function list({ q, categoria, cidade, estado, page = 1, limit = 12 }) {
@@ -49,7 +50,18 @@ async function list({ q, categoria, cidade, estado, page = 1, limit = 12 }) {
 async function findById(id) {
   const profile = await prisma.profile.findUnique({
     where: { id },
-    select: { ...profileSelect, reviews: { orderBy: { createdAt: 'desc' }, take: 20 }, posts: { select: { id: true, titulo: true, conteudo: true, imagemUrl: true, createdAt: true }, orderBy: { createdAt: 'desc' } } },
+    select: {
+      ...profileSelect,
+      reviews: {
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: { id: true, autorNome: true, nota: true, comentario: true, createdAt: true, medias: { select: { id: true, tipo: true, url: true } } },
+      },
+      posts: {
+        select: { id: true, tipo: true, titulo: true, conteudo: true, imagemUrl: true, videoUrl: true, destaque: true, createdAt: true },
+        orderBy: [{ destaque: 'desc' }, { createdAt: 'desc' }],
+      },
+    },
   })
   if (!profile || !profile.ativo || !profile.aprovado) {
     const err = new Error('Perfil não encontrado')
@@ -131,7 +143,14 @@ async function assertOwner(id, userId) {
 async function findByUser(userId) {
   return prisma.profile.findUnique({
     where: { userId },
-    select: { ...profileSelect, posts: { select: { id: true, titulo: true, conteudo: true, imagemUrl: true, createdAt: true }, orderBy: { createdAt: 'desc' } } },
+    select: {
+      ...profileSelect,
+      aprovado: true,
+      posts: {
+        select: { id: true, tipo: true, titulo: true, conteudo: true, imagemUrl: true, videoUrl: true, destaque: true, createdAt: true },
+        orderBy: [{ destaque: 'desc' }, { createdAt: 'desc' }],
+      },
+    },
   })
 }
 

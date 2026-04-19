@@ -7,6 +7,10 @@ const createReviewSchema = z.object({
   autorNome: z.string().min(2).max(100),
   nota: z.number().int().min(1).max(5),
   comentario: z.string().max(1000).optional(),
+  medias: z.array(z.object({
+    tipo: z.enum(['foto', 'video']),
+    url: z.string().url(),
+  })).max(4).optional(),
 })
 
 router.get('/:profileId', ctrl.list)
