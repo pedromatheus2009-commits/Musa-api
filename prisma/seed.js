@@ -154,6 +154,7 @@ async function main() {
         whatsapp: p.whatsapp,
         preco: p.preco,
         ativo: true,
+        aprovado: true,
         services: {
           create: p.services.map((nome) => ({ nome })),
         },

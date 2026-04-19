@@ -3,7 +3,7 @@ const prisma = require('../../config/database')
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 const PRICE_ID = process.env.STRIPE_PRICE_ID
-const CLIENT_URL = process.env.CORS_ORIGIN || 'http://localhost:5173'
+const CLIENT_URL = process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:5173'
 
 async function createCheckoutSession(userId) {
   const user = await prisma.user.findUnique({ where: { id: userId } })
