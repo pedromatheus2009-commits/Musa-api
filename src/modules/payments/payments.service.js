@@ -132,15 +132,15 @@ async function _updateUserSubscription(customerId, subscription) {
   if (!user) return
 
   const status = subscription.status
-  const periodEnd = new Date(subscription.current_period_end * 1000)
-  const isActive = status === 'active' || status === 'trialing'
+  const rawEnd = subscription.current_period_end ?? subscription.trial_end
+  const periodEnd = rawEnd ? new Date(rawEnd * 1000) : null
 
   await prisma.user.update({
     where: { id: user.id },
     data: {
       subscriptionId: subscription.id,
       subscriptionStatus: status,
-      subscriptionPeriodEnd: periodEnd,
+      ...(periodEnd && { subscriptionPeriodEnd: periodEnd }),
     },
   })
 }
