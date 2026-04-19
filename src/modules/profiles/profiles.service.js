@@ -102,8 +102,11 @@ async function update(id, userId, data) {
 
 async function resolveCategoryConnect(categoria) {
   if (!categoria) return null
-  const cat = await prisma.category.findFirst({ where: { nome: { equals: categoria, mode: 'insensitive' } } })
-  return cat?.id ?? null
+  // Busca primeiro (case-insensitive); se não existir, cria automaticamente
+  const existing = await prisma.category.findFirst({ where: { nome: { equals: categoria, mode: 'insensitive' } } })
+  if (existing) return existing.id
+  const created = await prisma.category.create({ data: { nome: categoria } })
+  return created.id
 }
 
 async function remove(id, userId) {
