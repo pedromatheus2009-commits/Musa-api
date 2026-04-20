@@ -2,6 +2,7 @@ const prisma = require('../../config/database')
 
 const postSelect = {
   id: true,
+  userId: true,
   titulo: true,
   conteudo: true,
   imagemUrl: true,

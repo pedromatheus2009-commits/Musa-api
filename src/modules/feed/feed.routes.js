@@ -22,6 +22,6 @@ router.delete('/comments/:commentId', verifyJWT, ctrl.deleteComment)
 // Admin only
 router.get('/admin/all', verifyJWT, requireAdmin, ctrl.listAll)
 router.put('/:id', verifyJWT, requireAdmin, validate(updateFeedPostSchema), ctrl.update)
-router.delete('/:id', verifyJWT, requireAdmin, ctrl.remove)
+router.delete('/:id', verifyJWT, ctrl.remove)
 
 module.exports = router

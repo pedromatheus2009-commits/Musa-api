@@ -37,6 +37,10 @@ async function update(req, res, next) {
 
 async function remove(req, res, next) {
   try {
+    const post = await service.findById(req.params.id)
+    if (!req.user.isAdmin && post.userId !== req.user.sub) {
+      return res.status(403).json({ error: 'Sem permissão para excluir esta publicação' })
+    }
     await service.remove(req.params.id)
     res.status(204).end()
   } catch (err) { next(err) }
