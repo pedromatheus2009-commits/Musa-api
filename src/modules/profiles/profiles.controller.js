@@ -40,6 +40,13 @@ async function remove(req, res, next) {
   } catch (err) { next(err) }
 }
 
+async function getBySlug(req, res, next) {
+  try {
+    const profile = await service.findBySlug(req.params.slug)
+    res.json(profile)
+  } catch (err) { next(err) }
+}
+
 async function getMe(req, res, next) {
   try {
     const profile = await service.findByUser(req.user.sub)
@@ -47,4 +54,4 @@ async function getMe(req, res, next) {
   } catch (err) { next(err) }
 }
 
-module.exports = { list, getOne, create, update, remove, getMe }
+module.exports = { list, getOne, getBySlug, create, update, remove, getMe }

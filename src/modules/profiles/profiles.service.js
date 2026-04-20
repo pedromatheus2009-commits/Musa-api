@@ -1,5 +1,30 @@
 const prisma = require('../../config/database')
 
+function toSlug(str) {
+  return str
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .slice(0, 80)
+}
+
+async function generateUniqueSlug(nome, excludeId = null) {
+  const base = toSlug(nome)
+  let slug = base
+  let n = 2
+  while (true) {
+    const existing = await prisma.profile.findFirst({
+      where: { slug, ...(excludeId && { id: { not: excludeId } }) },
+      select: { id: true },
+    })
+    if (!existing) return slug
+    slug = `${base}-${n++}`
+  }
+}
+
 const profileSelect = {
   id: true,
   nome: true,
@@ -9,12 +34,13 @@ const profileSelect = {
   whatsapp: true,
   preco: true,
   fotoUrl: true,
+  slug: true,
   ativo: true,
   createdAt: true,
   services: { select: { id: true, nome: true } },
   categories: { select: { category: { select: { id: true, nome: true } } } },
   _count: { select: { reviews: true } },
-  posts: { where: { destaque: true, tipo: 'portfolio' }, select: { imagemUrl: true }, take: 1 },
+  posts: { select: { imagemUrl: true, destaque: true }, orderBy: [{ destaque: 'desc' }, { createdAt: 'desc' }], take: 1 },
 }
 
 async function list({ q, categoria, cidade, estado, page = 1, limit = 12 }) {
@@ -80,10 +106,12 @@ async function create(userId, data) {
   }
   const { services, categoria, ...profileData } = data
   const categoryConnect = await resolveCategoryConnect(categoria)
+  const slug = profileData.nome ? await generateUniqueSlug(profileData.nome) : null
   return prisma.profile.create({
     data: {
       ...profileData,
       userId,
+      slug,
       ...(services && { services: { create: services.map((nome) => ({ nome })) } }),
       ...(categoryConnect && { categories: { create: [{ categoryId: categoryConnect }] } }),
     },
@@ -101,10 +129,12 @@ async function update(id, userId, data) {
     await prisma.profileCategory.deleteMany({ where: { profileId: id } })
   }
   const categoryConnect = await resolveCategoryConnect(categoria)
+  const slugUpdate = profileData.nome ? { slug: await generateUniqueSlug(profileData.nome, id) } : {}
   return prisma.profile.update({
     where: { id },
     data: {
       ...profileData,
+      ...slugUpdate,
       ...(services && { services: { create: services.map((nome) => ({ nome })) } }),
       ...(categoryConnect && { categories: { create: [{ categoryId: categoryConnect }] } }),
     },
@@ -154,4 +184,25 @@ async function findByUser(userId) {
   })
 }
 
-module.exports = { list, findById, create, update, remove, findByUser }
+async function findBySlug(slug) {
+  const profile = await prisma.profile.findUnique({
+    where: { slug },
+    select: {
+      ...profileSelect,
+      aprovado: true,
+      reviews: {
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: { id: true, autorNome: true, nota: true, comentario: true, createdAt: true, medias: { select: { id: true, tipo: true, url: true } } },
+      },
+    },
+  })
+  if (!profile || !profile.ativo || !profile.aprovado) {
+    const err = new Error('Perfil não encontrado')
+    err.status = 404
+    throw err
+  }
+  return profile
+}
+
+module.exports = { list, findById, findBySlug, create, update, remove, findByUser }

@@ -21,6 +21,8 @@ model User {
   updatedAt                DateTime             @updatedAt @map("updated_at")
   profile                  Profile?
   feedPosts                FeedPost[]
+  feedLikes                FeedLike[]
+  feedComments             FeedComment[]
   passwordResetTokens      PasswordResetToken[]
 
   @@map("users")
@@ -48,6 +50,7 @@ model Profile {
   whatsapp   String?           @db.VarChar(20)
   preco      String?           @db.VarChar(50)
   fotoUrl    String?           @map("foto_url")
+  slug       String?           @unique @db.VarChar(100)
   ativo      Boolean           @default(true)
   aprovado   Boolean           @default(false)
   createdAt  DateTime          @default(now()) @map("created_at")
@@ -56,6 +59,7 @@ model Profile {
   categories ProfileCategory[]
   reviews    Review[]
   posts      Post[]
+  feedPosts  FeedPost[]
 
   @@map("profiles")
 }
@@ -112,18 +116,50 @@ model ReviewMedia {
 }
 
 model FeedPost {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  titulo    String   @db.VarChar(200)
-  conteudo  String?  @db.Text
-  imagemUrl String?  @map("imagem_url")
-  videoUrl  String?  @map("video_url")
-  publicado Boolean  @default(true)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id        String        @id @default(uuid())
+  userId    String        @map("user_id")
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profileId String?       @map("profile_id")
+  profile   Profile?      @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  titulo    String        @db.VarChar(200)
+  conteudo  String?       @db.Text
+  imagemUrl String?       @map("imagem_url")
+  videoUrl  String?       @map("video_url")
+  publicado Boolean       @default(true)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  likes     FeedLike[]
+  comments  FeedComment[]
 
   @@map("feed_posts")
+}
+
+model FeedLike {
+  id         String   @id @default(uuid())
+  feedPostId String   @map("feed_post_id")
+  feedPost   FeedPost @relation(fields: [feedPostId], references: [id], onDelete: Cascade)
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([feedPostId, userId])
+  @@map("feed_likes")
+}
+
+model FeedComment {
+  id         String        @id @default(uuid())
+  feedPostId String        @map("feed_post_id")
+  feedPost   FeedPost      @relation(fields: [feedPostId], references: [id], onDelete: Cascade)
+  userId     String        @map("user_id")
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  autorNome  String        @map("autor_nome")
+  texto      String        @db.Text
+  parentId   String?       @map("parent_id")
+  parent     FeedComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    FeedComment[] @relation("CommentReplies")
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  @@map("feed_comments")
 }
 
 model Post {

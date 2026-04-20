@@ -2,7 +2,7 @@ const service = require('./feed.service')
 
 async function list(req, res, next) {
   try {
-    const posts = await service.list({ includeUnpublished: false })
+    const posts = await service.list({ includeUnpublished: false, userId: req.user?.sub ?? null })
     res.json(posts)
   } catch (err) { next(err) }
 }
@@ -42,4 +42,36 @@ async function remove(req, res, next) {
   } catch (err) { next(err) }
 }
 
-module.exports = { list, listAll, getOne, create, update, remove }
+async function like(req, res, next) {
+  try {
+    const result = await service.toggleLike(req.params.id, req.user.sub)
+    res.json(result)
+  } catch (err) { next(err) }
+}
+
+async function getComments(req, res, next) {
+  try {
+    const comments = await service.listComments(req.params.id)
+    res.json(comments)
+  } catch (err) { next(err) }
+}
+
+async function createComment(req, res, next) {
+  try {
+    const { autorNome, texto, parentId } = req.body
+    if (!autorNome?.trim() || !texto?.trim()) {
+      return res.status(400).json({ error: 'autorNome e texto são obrigatórios' })
+    }
+    const comment = await service.createComment(req.params.id, req.user.sub, { autorNome, texto, parentId })
+    res.status(201).json(comment)
+  } catch (err) { next(err) }
+}
+
+async function deleteComment(req, res, next) {
+  try {
+    await service.deleteComment(req.params.commentId, req.user.sub, req.user.isAdmin)
+    res.status(204).end()
+  } catch (err) { next(err) }
+}
+
+module.exports = { list, listAll, getOne, create, update, remove, like, getComments, createComment, deleteComment }

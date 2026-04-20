@@ -6,6 +6,7 @@ const ctrl = require('./profiles.controller')
 
 router.get('/', ctrl.list)
 router.get('/me', verifyJWT, ctrl.getMe)
+router.get('/slug/:slug', ctrl.getBySlug)
 router.get('/:id', ctrl.getOne)
 router.post('/', verifyJWT, validate(createProfileSchema), ctrl.create)
 router.put('/:id', verifyJWT, validate(updateProfileSchema), ctrl.update)

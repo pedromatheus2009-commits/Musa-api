@@ -21,4 +21,13 @@ function verifyAdmin(req, res, next) {
   })
 }
 
-module.exports = { verifyJWT, verifyAdmin }
+function optionalJWT(req, res, next) {
+  const header = req.headers.authorization
+  if (!header?.startsWith('Bearer ')) return next()
+  try {
+    req.user = jwt.verify(header.slice(7), process.env.JWT_SECRET)
+  } catch {}
+  next()
+}
+
+module.exports = { verifyJWT, verifyAdmin, optionalJWT }
