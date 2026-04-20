@@ -7,6 +7,13 @@ async function list(req, res, next) {
   } catch (err) { next(err) }
 }
 
+async function listMy(req, res, next) {
+  try {
+    const posts = await service.listMy(req.user.sub)
+    res.json(posts)
+  } catch (err) { next(err) }
+}
+
 async function listAll(req, res, next) {
   try {
     const posts = await service.list({ includeUnpublished: true })
@@ -30,8 +37,15 @@ async function create(req, res, next) {
 
 async function update(req, res, next) {
   try {
-    const post = await service.update(req.params.id, req.body)
-    res.json(post)
+    const post = await service.findById(req.params.id)
+    const isOwner = post.userId === req.user.sub
+    if (!req.user.isAdmin && !isOwner) {
+      return res.status(403).json({ error: 'Sem permissão' })
+    }
+    const { publicado, ...ownerFields } = req.body
+    const data = req.user.isAdmin ? req.body : ownerFields
+    const updated = await service.update(req.params.id, data)
+    res.json(updated)
   } catch (err) { next(err) }
 }
 
@@ -78,4 +92,4 @@ async function deleteComment(req, res, next) {
   } catch (err) { next(err) }
 }
 
-module.exports = { list, listAll, getOne, create, update, remove, like, getComments, createComment, deleteComment }
+module.exports = { list, listMy, listAll, getOne, create, update, remove, like, getComments, createComment, deleteComment }

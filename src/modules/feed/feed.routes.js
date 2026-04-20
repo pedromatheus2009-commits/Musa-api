@@ -8,6 +8,7 @@ const ctrl = require('./feed.controller')
 
 // Público (com auth opcional para likedByMe)
 router.get('/', optionalJWT, ctrl.list)
+router.get('/my', verifyJWT, ctrl.listMy)
 router.get('/:id', ctrl.getOne)
 router.get('/:id/comments', ctrl.getComments)
 
@@ -21,7 +22,7 @@ router.delete('/comments/:commentId', verifyJWT, ctrl.deleteComment)
 
 // Admin only
 router.get('/admin/all', verifyJWT, requireAdmin, ctrl.listAll)
-router.put('/:id', verifyJWT, requireAdmin, validate(updateFeedPostSchema), ctrl.update)
+router.put('/:id', verifyJWT, validate(updateFeedPostSchema), ctrl.update)
 router.delete('/:id', verifyJWT, ctrl.remove)
 
 module.exports = router

@@ -41,6 +41,20 @@ async function findById(id) {
   return post
 }
 
+async function listMy(userId) {
+  const posts = await prisma.feedPost.findMany({
+    where: { userId },
+    select: postSelect,
+    orderBy: { createdAt: 'desc' },
+  })
+  const likedIds = await prisma.feedLike.findMany({
+    where: { userId, feedPostId: { in: posts.map((p) => p.id) } },
+    select: { feedPostId: true },
+  })
+  const likedSet = new Set(likedIds.map((l) => l.feedPostId))
+  return posts.map((p) => ({ ...p, likedByMe: likedSet.has(p.id) }))
+}
+
 async function create(userId, data) {
   const profile = await prisma.profile.findUnique({ where: { userId }, select: { id: true } })
   return prisma.feedPost.create({
@@ -112,4 +126,4 @@ async function deleteComment(id, userId, isAdmin) {
   await prisma.feedComment.delete({ where: { id } })
 }
 
-module.exports = { list, findById, create, update, remove, toggleLike, listComments, createComment, deleteComment }
+module.exports = { list, listMy, findById, create, update, remove, toggleLike, listComments, createComment, deleteComment }
