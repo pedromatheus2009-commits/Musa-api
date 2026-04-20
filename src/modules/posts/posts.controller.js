@@ -35,12 +35,16 @@ async function update(req, res, next) {
 
 async function remove(req, res, next) {
   try {
-    const profile = await prisma.profile.findUnique({
-      where: { userId: req.user.sub },
-      select: { id: true },
-    })
-    if (!profile) return res.status(404).json({ error: 'Perfil não encontrado' })
-    await service.remove(req.params.id, profile.id)
+    if (req.user.isAdmin) {
+      await service.removeById(req.params.id)
+    } else {
+      const profile = await prisma.profile.findUnique({
+        where: { userId: req.user.sub },
+        select: { id: true },
+      })
+      if (!profile) return res.status(404).json({ error: 'Perfil não encontrado' })
+      await service.remove(req.params.id, profile.id)
+    }
     res.status(204).end()
   } catch (err) { next(err) }
 }

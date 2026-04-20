@@ -64,6 +64,10 @@ async function remove(id, profileId) {
   await prisma.post.delete({ where: { id } })
 }
 
+async function removeById(id) {
+  await prisma.post.delete({ where: { id } })
+}
+
 async function assertOwner(id, profileId) {
   const post = await prisma.post.findUnique({ where: { id }, select: { profileId: true } })
   if (!post) {
@@ -78,4 +82,4 @@ async function assertOwner(id, profileId) {
   }
 }
 
-module.exports = { listByProfile, create, update, remove }
+module.exports = { listByProfile, create, update, remove, removeById }
